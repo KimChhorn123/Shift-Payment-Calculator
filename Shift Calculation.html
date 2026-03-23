@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shift Payment Calculator</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f2f5;
+  padding: 20px;
+  color: #333;
+}
+
+h1 {
+  text-align: center;
+  color: #2c3e50;
+}
+
+.container {
+  max-width: 600px;
+  margin: auto;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+
+label {
+  font-weight: bold;
+  margin-top: 10px;
+  display: block;
+}
+
+input {
+  margin: 5px 0;
+  padding: 8px;
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background: #3498db;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 15px;
+  font-size: 16px;
+}
+
+button:hover {
+  background: #2980b9;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+th {
+  background: #3498db;
+  color: #fff;
+}
+
+.output {
+  margin-top: 20px;
+  padding: 15px;
+  background: #ecf0f1;
+  border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Shift Payment Calculator</h1>
+
+<div class="container">
+
+<h3>Pay Rates ($ per hour)</h3>
+<label>Weekday:</label>
+<input type="number" id="weekdayRate">
+
+<label>Saturday:</label>
+<input type="number" id="saturdayRate">
+
+<label>Sunday:</label>
+<input type="number" id="sundayRate">
+
+<h3>Number of Shifts</h3>
+<label>Weekday Shifts:</label>
+<input type="number" id="weekdayCount" min="0" value="0" oninput="generateInputs()">
+
+<label>Saturday Shifts:</label>
+<input type="number" id="saturdayCount" min="0" value="0" oninput="generateInputs()">
+
+<label>Sunday Shifts:</label>
+<input type="number" id="sundayCount" min="0" value="0" oninput="generateInputs()">
+
+<div id="shiftInputs"></div>
+
+<button onclick="calculatePay()">Calculate</button>
+
+<div class="output" id="output"></div>
+
+</div>
+
+<script>
+
+// Convert time to decimal
+function parseTime(t) {
+  if (t.includes(':')) {
+    let [h, m] = t.split(':').map(Number);
+    return h + (m || 0) / 60;
+  }
+  return Number(t);
+}
+
+// Calculate hours safely
+function parseHours(value) {
+  if (!value.includes('-')) return 0;
+
+  let [start, end] = value.split('-').map(v => parseTime(v.trim()));
+
+  if (isNaN(start) || isNaN(end)) return 0;
+
+  // Fix reversed input
+  if (end < start) [start, end] = [end, start];
+
+  let hours = end - start;
+
+  // Deduct break if > 5.5 hours
+  if (hours > 5.5) hours -= 0.5;
+
+  return hours;
+}
+
+// Generate inputs dynamically
+function generateInputs() {
+  const weekdayCount = +document.getElementById('weekdayCount').value || 0;
+  const saturdayCount = +document.getElementById('saturdayCount').value || 0;
+  const sundayCount = +document.getElementById('sundayCount').value || 0;
+
+  let html = '<h3>Enter Shifts (e.g. 8-14 or 8:30-13:00)</h3>';
+
+  for (let i = 1; i <= weekdayCount; i++) {
+    html += `<label>Weekday Shift ${i}</label>
+             <input type="text" class="weekdayShift" placeholder="8-14 or 8:30-13:00">`;
+  }
+
+  for (let i = 1; i <= saturdayCount; i++) {
+    html += `<label>Saturday Shift ${i}</label>
+             <input type="text" class="saturdayShift" placeholder="8-14 or 8:30-13:00">`;
+  }
+
+  for (let i = 1; i <= sundayCount; i++) {
+    html += `<label>Sunday Shift ${i}</label>
+             <input type="text" class="sundayShift" placeholder="8-14 or 8:30-13:00">`;
+  }
+
+  document.getElementById('shiftInputs').innerHTML = html;
+}
+
+// Calculate total pay
+function calculatePay() {
+  const weekdayRate = +document.getElementById('weekdayRate').value || 0;
+  const saturdayRate = +document.getElementById('saturdayRate').value || 0;
+  const sundayRate = +document.getElementById('sundayRate').value || 0;
+
+  let weekdayHours = 0, saturdayHours = 0, sundayHours = 0;
+  let tableRows = '';
+
+  document.querySelectorAll('.weekdayShift').forEach((input, i) => {
+    let h = parseHours(input.value.trim());
+    weekdayHours += h;
+    tableRows += `<tr><td>Weekday ${i+1}</td><td>${h.toFixed(2)}</td></tr>`;
+  });
+
+  document.querySelectorAll('.saturdayShift').forEach((input, i) => {
+    let h = parseHours(input.value.trim());
+    saturdayHours += h;
+    tableRows += `<tr><td>Saturday ${i+1}</td><td>${h.toFixed(2)}</td></tr>`;
+  });
+
+  document.querySelectorAll('.sundayShift').forEach((input, i) => {
+    let h = parseHours(input.value.trim());
+    sundayHours += h;
+    tableRows += `<tr><td>Sunday ${i+1}</td><td>${h.toFixed(2)}</td></tr>`;
+  });
+
+  const totalHours = weekdayHours + saturdayHours + sundayHours;
+
+  const weekdayPay = weekdayHours * weekdayRate;
+  const saturdayPay = saturdayHours * saturdayRate;
+  const sundayPay = sundayHours * sundayRate;
+  const totalPay = weekdayPay + saturdayPay + sundayPay;
+
+  const totalShifts =
+    document.querySelectorAll('.weekdayShift').length +
+    document.querySelectorAll('.saturdayShift').length +
+    document.querySelectorAll('.sundayShift').length;
+
+  document.getElementById('output').innerHTML = `
+    <h3>Summary</h3>
+
+    <p><strong>Total Shifts:</strong> ${totalShifts}</p>
+
+    <table>
+      <tr><th>Shift</th><th>Hours</th></tr>
+      ${tableRows}
+    </table>
+
+    <p><strong>Total Hours:</strong> ${totalHours.toFixed(2)}</p>
+
+    <p>Weekday: ${weekdayHours.toFixed(2)} hrs → $${weekdayPay.toFixed(2)}</p>
+    <p>Saturday: ${saturdayHours.toFixed(2)} hrs → $${saturdayPay.toFixed(2)}</p>
+    <p>Sunday: ${sundayHours.toFixed(2)} hrs → $${sundayPay.toFixed(2)}</p>
+
+    <h2>Total Pay: $${totalPay.toFixed(2)}</h2>
+  `;
+}
+
+</script>
+
+</body>
+</html>
