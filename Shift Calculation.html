@@ -83,6 +83,17 @@ function parseHours(val){
   if(h>5.5) h-=0.5;
   return h;
 }
+  
+bot.sendMessage(chatId, "Open Calculator", {
+  reply_markup: {
+    inline_keyboard: [[
+      {
+        text: "Open App",
+        web_app: { url: "https://github.com/KimChhorn123/Shift-Payment-Calculator" }
+      }
+    ]]
+  }
+});
 
 // Generate dynamic shift inputs
 function generateInputs(){
